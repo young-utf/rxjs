@@ -11,6 +11,18 @@ var Rx = require('rx'),
 // updates: todo list 에 적용될 작용을 받는다.
 // todos: 최신의 todo list 을 가지는 observable 이다.
 
-function TodoStore () {
+function TodoStore (key) {
+    this.updates = new Rx.BehaviorSubject(store(key));
 
+    this.todos = this.updates
+        .scan(function (todos, operation) {
+            return operation(todos);
+        });
+
+    this.key = key;
+    this.todos.forEach(function (todos) {
+        store(key, todos);
+    });
 }
+
+module.exports = TodoStore;

@@ -7,3 +7,5 @@ var Rx = require('rx'),
     TodoStore = require('./store/todoStore'),
     TodoActions = require('./actions/TodoActions'),
     MainView = require('./views/mainView.jsx');
+
+var todoStore = new TodoStore('react-todos');
