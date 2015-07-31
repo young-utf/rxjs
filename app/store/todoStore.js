@@ -13,7 +13,6 @@ var Rx = require('rx'),
 
 function TodoStore (key) {
     this.updates = new Rx.BehaviorSubject(store(key));
-
     this.todos = this.updates
         .scan(function (todos, operation) {
             return operation(todos);
