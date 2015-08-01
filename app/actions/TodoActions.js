@@ -3,12 +3,14 @@
  */
 
 var Rx = require('rx'),
-    assign = require('../utils/assign'),
-    uuid = require('../utils/uuid');
+    uuid = require('../utils/uuid'),
+    store = require('../utils/store'),
+    source = Rx.Observable.create(function (observer) {
+
+    });
 
 var TodoActions = {
     create: new Rx.Subject(),
-    toggle: new Rx.Subject(),
     destroy: new Rx.Subject()
 };
 
@@ -21,18 +23,6 @@ TodoActions.register = function (updates) {
                     id: uuid(),
                     title: title,
                     completed: false
-                });
-            };
-        })
-        .subscribe(updates);
-
-    this.toggle
-        .map(function(todoToToggle) {
-            return function (todos) {
-                return todos.map(function (todo) {
-                    return  todo !== todoToToggle ?
-                        todo :
-                        assign({}, todo, {completed: !todo.completed});
                 });
             };
         })

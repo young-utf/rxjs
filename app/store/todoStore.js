@@ -3,7 +3,6 @@
  */
 
 var Rx = require('rx'),
-    assign = require('../utils/assign'),
     store = require('../utils/store');
 
 
@@ -12,15 +11,10 @@ var Rx = require('rx'),
 // todos: 최신의 todo list 을 가지는 observable 이다.
 
 function TodoStore (key) {
-    this.updates = new Rx.BehaviorSubject(store(key));
-    this.todos = this.updates
-        .scan(function (todos, operation) {
-            return operation(todos);
-        });
-
-    this.key = key;
-    this.todos.forEach(function (todos) {
-        store(key, todos);
+    var self = this;
+    this.source = Rx.Observable.create(function (observer) {
+        self.observer = observer;
+        observer.onNext(store(key));
     });
 }
 

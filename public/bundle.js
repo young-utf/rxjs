@@ -53,12 +53,12 @@
 	var Rx = __webpack_require__(1),
 	    React = __webpack_require__(4),
 	    TodoStore = __webpack_require__(159),
-	    TodoActions = __webpack_require__(162),
-	    MainView = __webpack_require__(184);
+	    TodoActions = __webpack_require__(161),
+	    MainView = __webpack_require__(163);
 
 	var todoStore = new TodoStore('react-todos');
 
-	TodoActions.register(todoStore.updates);
+	//TodoActions.register(todoStore.updates);
 
 	React.render(React.createElement(MainView, { todoStore: todoStore }), document.getElementById('todoapp'));
 
@@ -31194,22 +31194,17 @@
 	'use strict';
 
 	var Rx = __webpack_require__(1),
-	    assign = __webpack_require__(160),
-	    store = __webpack_require__(161);
+	    store = __webpack_require__(160);
 
 	// store 은 2개의 스트림을 노출시킨다.
 	// updates: todo list 에 적용될 작용을 받는다.
 	// todos: 최신의 todo list 을 가지는 observable 이다.
 
 	function TodoStore(key) {
-	    this.updates = new Rx.BehaviorSubject(store(key));
-	    this.todos = this.updates.scan(function (todos, operation) {
-	        return operation(todos);
-	    });
-
-	    this.key = key;
-	    this.todos.forEach(function (todos) {
-	        store(key, todos);
+	    var self = this;
+	    this.source = Rx.Observable.create(function (observer) {
+	        self.observer = observer;
+	        observer.onNext(store(key));
 	    });
 	}
 
@@ -31217,28 +31212,6 @@
 
 /***/ },
 /* 160 */
-/***/ function(module, exports) {
-
-	/**
-	 * Created by youngmoon on 8/1/15.
-	 */
-
-	"use strict";
-
-	module.exports = function assign(target, items) {
-
-	    items = [].slice.call(arguments);
-
-	    return items.reduce(function (target, item) {
-	        return Object.keys(item).reduce(function (target, property) {
-	            target[property] = item[property];
-	            return target;
-	        }, target);
-	    }, target);
-	};
-
-/***/ },
-/* 161 */
 /***/ function(module, exports) {
 
 	/**
@@ -31257,7 +31230,7 @@
 	};
 
 /***/ },
-/* 162 */
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31267,12 +31240,12 @@
 	'use strict';
 
 	var Rx = __webpack_require__(1),
-	    assign = __webpack_require__(160),
-	    uuid = __webpack_require__(163);
+	    uuid = __webpack_require__(162),
+	    store = __webpack_require__(160),
+	    source = Rx.Observable.create(function (observer) {});
 
 	var TodoActions = {
 	    create: new Rx.Subject(),
-	    toggle: new Rx.Subject(),
 	    destroy: new Rx.Subject()
 	};
 
@@ -31284,14 +31257,6 @@
 	                id: uuid(),
 	                title: title,
 	                completed: false
-	            });
-	        };
-	    }).subscribe(updates);
-
-	    this.toggle.map(function (todoToToggle) {
-	        return function (todos) {
-	            return todos.map(function (todo) {
-	                return todo !== todoToToggle ? todo : assign({}, todo, { completed: !todo.completed });
 	            });
 	        };
 	    }).subscribe(updates);
@@ -31308,7 +31273,7 @@
 	module.exports = TodoActions;
 
 /***/ },
-/* 163 */
+/* 162 */
 /***/ function(module, exports) {
 
 	/**
@@ -31333,27 +31298,7 @@
 	};
 
 /***/ },
-/* 164 */,
-/* 165 */,
-/* 166 */,
-/* 167 */,
-/* 168 */,
-/* 169 */,
-/* 170 */,
-/* 171 */,
-/* 172 */,
-/* 173 */,
-/* 174 */,
-/* 175 */,
-/* 176 */,
-/* 177 */,
-/* 178 */,
-/* 179 */,
-/* 180 */,
-/* 181 */,
-/* 182 */,
-/* 183 */,
-/* 184 */
+/* 163 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31364,8 +31309,8 @@
 
 	var React = __webpack_require__(4),
 	    Rx = __webpack_require__(1),
-	    InputBox = __webpack_require__(185),
-	    TodoList = __webpack_require__(186);
+	    InputBox = __webpack_require__(164),
+	    TodoList = __webpack_require__(166);
 
 	var MainView = React.createClass({
 	    displayName: 'MainView',
@@ -31373,14 +31318,22 @@
 	    getInitialState: function getInitialState() {
 	        return {};
 	    },
+	    getTodos: function getTodos(data) {
+	        this.setState({
+	            todos: data
+	        });
+	    },
 	    componentWillMount: function componentWillMount() {
-	        var todoStore = this.props.todoStore;
+	        var self = this;
+	        this.props.todoStore.source.subscribe(function (data) {
+	            self.getTodos(data);
+	        });
 	    },
 	    render: function render() {
 	        return React.createElement(
 	            'div',
 	            null,
-	            React.createElement(InputBox, null),
+	            React.createElement(InputBox, { todoStore: this.props.todoStore, todos: this.state.todos }),
 	            React.createElement(TodoList, { todos: this.state.todos })
 	        );
 	    }
@@ -31389,7 +31342,7 @@
 	module.exports = MainView;
 
 /***/ },
-/* 185 */
+/* 164 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31399,48 +31352,41 @@
 	'use strict';
 
 	var React = __webpack_require__(4),
-	    EventHandler = __webpack_require__(187),
-	    TodoActions = __webpack_require__(162);
+	    uuid = __webpack_require__(162),
+	    EventHandler = __webpack_require__(165),
+	    TodoActions = __webpack_require__(161);
 
 	var InputBox = React.createClass({
 	    displayName: 'InputBox',
 
-	    componentWillMount: function componentWillMount() {
-	        var newFieldKeyDown = EventHandler.create();
-	        var enterEvent = newFieldKeyDown.filter(function (event) {
-	            return event.keyCode === 13;
+	    addTodo: function addTodo(e) {
+	        e.preventDefault();
+	        var todos = this.props.todos;
+	        todos.push({
+	            id: uuid(),
+	            title: this.refs.txt.getDOMNode().value,
+	            completed: false
 	        });
-
-	        enterEvent.forEach(function (event) {
-	            event.stopPropagation();
-	            event.preventDefault();
-	        });
-
-	        enterEvent.map(function (event) {
-	            return event.target.value.trim();
-	        }).filter(function (value) {
-	            return !!value;
-	        }).subscribe(TodoActions.create);
-
-	        enterEvent.forEach(function (event) {
-	            event.target.value = '';
-	        });
-
-	        this.handlers = {
-	            newFieldKeyDown: newFieldKeyDown
-	        };
+	        this.props.todoStore.observer.onNext(todos);
+	        //this.props.todoStore.source.subscribe(todos);
+	        this.refs.txt.getDOMNode().value = '';
 	    },
+	    componentWillMount: function componentWillMount() {},
 	    render: function render() {
 	        return React.createElement(
 	            'div',
 	            { className: "input-box" },
-	            React.createElement('input', {
-	                type: "text",
-	                placeholder: "What needs to be done?",
-	                id: "new-todo",
-	                autoFocus: true,
-	                onKeyDown: this.handlers.newFieldKeyDown
-	            })
+	            React.createElement(
+	                'form',
+	                { onSubmit: this.addTodo },
+	                React.createElement('input', {
+	                    type: "text",
+	                    placeholder: "What needs to be done?",
+	                    id: "new-todo",
+	                    ref: "txt",
+	                    autoFocus: true
+	                })
+	            )
 	        );
 	    }
 	});
@@ -31448,37 +31394,7 @@
 	module.exports = InputBox;
 
 /***/ },
-/* 186 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Created by youngmoon on 8/1/15.
-	 */
-
-	"use strict";
-
-	var React = __webpack_require__(4);
-
-	var TodoList = React.createClass({
-	    displayName: "TodoList",
-
-	    render: function render() {
-	        return React.createElement(
-	            "div",
-	            { className: "todo-list" },
-	            React.createElement(
-	                "ul",
-	                null,
-	                React.createElement("li", null)
-	            )
-	        );
-	    }
-	});
-
-	module.exports = TodoList;
-
-/***/ },
-/* 187 */
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31508,6 +31424,43 @@
 	    }
 	    return result;
 	}
+
+/***/ },
+/* 166 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Created by youngmoon on 8/1/15.
+	 */
+
+	"use strict";
+
+	var React = __webpack_require__(4);
+
+	var TodoList = React.createClass({
+	    displayName: "TodoList",
+
+	    render: function render() {
+	        var todos = this.props.todos || [];
+	        return React.createElement(
+	            "div",
+	            { className: "todo-list" },
+	            React.createElement(
+	                "ul",
+	                null,
+	                todos.map(function (data, index) {
+	                    return React.createElement(
+	                        "li",
+	                        { key: index },
+	                        data.title
+	                    );
+	                })
+	            )
+	        );
+	    }
+	});
+
+	module.exports = TodoList;
 
 /***/ }
 /******/ ]);

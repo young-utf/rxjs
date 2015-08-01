@@ -10,7 +10,7 @@ var Rx = require('rx'),
 
 var todoStore = new TodoStore('react-todos');
 
-TodoActions.register(todoStore.updates);
+//TodoActions.register(todoStore.updates);
 
 
 React.render(<MainView todoStore={todoStore} />, document.getElementById('todoapp'));

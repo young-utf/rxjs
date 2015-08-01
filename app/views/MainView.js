@@ -9,15 +9,24 @@ var React = require('react'),
 
 var MainView = React.createClass({
     getInitialState: function () {
-        return {};
+        return {
+        };
+    },
+    getTodos: function (data) {
+        this.setState({
+            todos: data
+        });
     },
     componentWillMount: function () {
-        var todoStore = this.props.todoStore;
+        var self = this;
+        this.props.todoStore.source.subscribe(function (data) {
+            self.getTodos(data);
+        });
     },
     render: function () {
         return (
             <div>
-                <InputBox />
+                <InputBox todoStore={this.props.todoStore} todos={this.state.todos} />
                 <TodoList todos={this.state.todos} />
             </div>
         );
